@@ -1,24 +1,15 @@
-# Rust → WebAssembly vs traditional (JavaScript / .NET)
+Continuously update, research, and master at least one new technology (beyond skill standard) each year, clearly understand its advantages and disadvantages, and develop personal skills.
 
-A split-screen demo that does the **same work** two ways and measures both:
+(Expected output: slides, demo, code sample, blog post)
 
-- **Left, traditional:** JavaScript in the browser, or a C# (.NET) server (upload → process → download).
-- **Right, new:** Rust compiled to WebAssembly (WASM), running in the browser. Nothing is uploaded.
+- Slides: [Rust_WASM_KPI_2026.pptx](docs/Rust_WASM_KPI_2026.pptx)
+- Demo video: [demo.mp4](docs/demo.mp4)
+- Code sample: this repository
+- Blog post: [Rust + WebAssembly vs JavaScript and .NET: what I measured](https://blog.nashtechglobal.com/?p=142816)
 
-Workloads: **image filters** on a 12 MP photo and **CSV / XLSX validation** of 100,000 rows.
-Slides and a recorded demo are in [`docs/`](docs/).
+---
 
-## Project layout
-
-| Path | What it is |
-|---|---|
-| [`rust-core/`](rust-core/) | Rust crate built to WASM: `apply_filter`, `validate_csv`, `validate_xlsx` |
-| [`web-ui/`](web-ui/) | React + Vite split-screen UI; JS and WASM engines run in Web Workers |
-| [`dotnet-api/`](dotnet-api/) | ASP.NET Core API (.NET 10): the server path and a sample-data generator |
-| [`benchmarks/`](benchmarks/) | Sample inputs: 4000×3000 PNG, 100k-row CSV and XLSX |
-| [`docs/`](docs/) | Presentation, demo video, screenshots |
-
-## Run it
+## How to run the code
 
 Prerequisites: Node.js, .NET SDK 10, Rust ([rustup](https://rustup.rs)) with `rustup target add wasm32-unknown-unknown`.
 
@@ -39,19 +30,3 @@ cd web-ui; npm install; npm run build:wasm; npm run dev    # terminal 2
 
 Then open <http://localhost:5173>, pick a file from `benchmarks/`, choose what "Traditional" means (JavaScript or C# server)
 and press **Run both**. The banner shows the speed-up and an *output match* check.
-
-## How the comparison stays fair
-
-- All three engines use the **same integer algorithms and validation rules**; the UI verifies the outputs match.
-- JS and WASM run in **Web Workers**; WASM load + compile (~30 ms, 539 KB) is reported separately.
-- 1 warm-up + N timed runs, **median** reported.
-- The server's `Server-Timing` header separates compute from network, so *Total* is what the user waits.
-- WASM timing **includes** the JS ↔ WASM data copy.
-
-## Known limits
-
-- The JS engine has no xlsx parser: XLSX compares WASM (`calamine`) with the server (`ClosedXML`).
-- Browser image-decode time is not counted; `performance.memory` is Chrome-only; server memory is not reported.
-- JS and C# CSV splitting does not support newlines inside quoted fields (the Rust `csv` crate does).
-- Results come from a single machine with the API on `localhost`.
-- The WASM build skips `wasm-opt`; enabling it should shrink the module (not measured).
