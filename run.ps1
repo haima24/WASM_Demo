@@ -14,14 +14,33 @@ if ((Test-Path $cargoBin) -and ($env:PATH -notlike "*$cargoBin*")) {
     $env:PATH = "$cargoBin;$env:PATH"
 }
 
-function Test-Tool($name) {
+function Test-Tool($name, $hint) {
     if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
-        throw "'$name' not found on PATH."
+        throw "'$name' not found on PATH. $hint"
     }
 }
 
-Test-Tool npm
-if (-not $SkipApi) { Test-Tool dotnet }
+# Prerequisites: Node.js, .NET SDK 10, Rust (rustup) + wasm32-unknown-unknown target
+Test-Tool node 'Install Node.js from https://nodejs.org'
+Test-Tool npm  'Install Node.js from https://nodejs.org'
+
+if (-not $SkipApi) {
+    Test-Tool dotnet 'Install the .NET SDK 10 from https://dotnet.microsoft.com/download'
+    $hasSdk10 = dotnet --list-sdks | Where-Object { $_ -match '^10\.' }
+    if (-not $hasSdk10) {
+        throw '.NET SDK 10 not found (dotnet-api targets net10.0). Install it from https://dotnet.microsoft.com/download'
+    }
+}
+
+if (-not $SkipWasm) {
+    Test-Tool rustup 'Install Rust from https://rustup.rs'
+    Test-Tool cargo  'Install Rust from https://rustup.rs'
+    if (-not (rustup target list --installed | Where-Object { $_ -eq 'wasm32-unknown-unknown' })) {
+        Write-Host '>> rustup target add wasm32-unknown-unknown' -ForegroundColor Cyan
+        rustup target add wasm32-unknown-unknown
+        if ($LASTEXITCODE -ne 0) { throw 'rustup target add wasm32-unknown-unknown failed' }
+    }
+}
 
 if (-not (Test-Path (Join-Path $ui 'node_modules'))) {
     Write-Host '>> npm install' -ForegroundColor Cyan
@@ -31,7 +50,6 @@ if (-not (Test-Path (Join-Path $ui 'node_modules'))) {
 
 if (-not $SkipWasm) {
     Write-Host '>> Building Rust -> WASM' -ForegroundColor Cyan
-    Test-Tool cargo
     Push-Location $ui; try { npm run build:wasm } finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { throw 'WASM build failed' }
 }
