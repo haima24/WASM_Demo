@@ -1,6 +1,4 @@
-Continuously update, research, and master at least one new technology (beyond skill standard) each year, clearly understand its advantages and disadvantages, and develop personal skills.
-
-(Expected output: slides, demo, code sample, blog post)
+## Rust + WebAssembly vs JavaScript and .NET
 
 - Slides: [Rust_WASM_KPI_2026.pptx](docs/Rust_WASM_KPI_2026.pptx)
 - Demo video: [demo.mp4](docs/demo.mp4)
