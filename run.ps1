@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [switch]$SkipWasm,   # skip the Rust -> WASM build
-    [switch]$SkipApi     # run only the web UI
+    [switch]$SkipApi,    # run only the web UI
+    [switch]$ExposeHost  # listen on all interfaces so the UI is reachable from other machines
 )
 
 $ErrorActionPreference = 'Stop'
@@ -69,9 +70,19 @@ try {
         }
     }
 
-    Write-Host '>> Starting UI on http://localhost:5173 (Ctrl+C to stop)' -ForegroundColor Cyan
     Push-Location $ui
-    try { npm run dev } finally { Pop-Location }
+    try {
+        if ($ExposeHost) {
+            # API stays on localhost; the UI's Vite proxy forwards /api to it
+            Write-Host '>> Starting UI on http://0.0.0.0:5173 - exposed to the network (Ctrl+C to stop)' -ForegroundColor Cyan
+            npm run dev -- --host
+        }
+        else {
+            Write-Host '>> Starting UI on http://localhost:5173 (Ctrl+C to stop)' -ForegroundColor Cyan
+            npm run dev
+        }
+    }
+    finally { Pop-Location }
 }
 finally {
     if ($apiProc -and -not $apiProc.HasExited) {
